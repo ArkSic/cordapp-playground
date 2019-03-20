@@ -1,5 +1,6 @@
 package com.luxoft.poc.mobi
 
+import com.luxoft.poc.mobi.model.data.ProvisionOffer
 import net.corda.core.contracts.CommandData
 import net.corda.core.contracts.UniqueIdentifier
 import net.corda.core.identity.Party
@@ -23,8 +24,8 @@ class MockInitAccountCommand(
  * * See: [GuaranteePaymentsFlow].
  */
 class GuaranteePaymentsCommand(
-        val requester: Party,
-        val guarantor: Party,
+//        val requester: Party,
+//        val guarantor: Party,
         val account: UniqueIdentifier,
         // TODO: replace with something more realistic
         val amounts: List<Int>

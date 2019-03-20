@@ -3,6 +3,7 @@ package com.luxoft.poc.mobi.flow
 import co.paralleluniverse.fibers.Suspendable
 import com.luxoft.poc.mobi.*
 import net.corda.core.contracts.UniqueIdentifier
+import net.corda.core.contracts.requireThat
 import net.corda.core.flows.*
 import net.corda.core.identity.Party
 import net.corda.core.node.services.queryBy
@@ -43,9 +44,9 @@ object ObtainPaymentGuaranteesFlow {
 
         companion object {
             object REQUESTING : ProgressTracker.Step("Requesting payment guarantees")
-
+            object SIGNING: ProgressTracker.Step("Verifying and signing payment operator's feedback")
             @JvmStatic
-            fun tracker() = ProgressTracker(REQUESTING)
+            fun tracker() = ProgressTracker( REQUESTING, SIGNING )
         }
 
         @Suspendable
@@ -53,15 +54,22 @@ object ObtainPaymentGuaranteesFlow {
             check(amounts.isNotEmpty()) { "There is nothing to guarantee: the list is empty"}
             amounts.forEach { check(it > 0) { "Each payment amount must be a positive value" } }
 
-            val command = GuaranteePaymentsCommand(
-                    requester = ourIdentity,
-                    guarantor = guarantor,
-                    account = account,
-                    amounts = amounts
-            )
-
             progressTracker.currentStep = REQUESTING
-            return initiateFlow(guarantor).sendAndReceive<List<UniqueIdentifier>>(command).unwrap { it }
+            val session = initiateFlow(guarantor)
+            session.send(GuaranteePaymentsCommand(account = account, amounts = amounts))
+
+            progressTracker.currentStep = SIGNING
+            var result = listOf<UniqueIdentifier>()
+            val signFlow = object: SignTransactionFlow(session) {
+                @Suspendable override fun checkTransaction(stx: SignedTransaction) {
+                    val guaranteeStates = stx.coreTransaction.outputsOfType<PaymentGuaranteeState>()
+                    // TODO verify that all the guaranties are there (in the proper order) and our account has not been robbed
+                    result = guaranteeStates.map { it.linearId }
+                }
+            }
+            subFlow(signFlow)
+
+            return result
         }
     }
 
@@ -77,18 +85,16 @@ object ObtainPaymentGuaranteesFlow {
                     QueryCriteria.LinearStateQueryCriteria(linearId = listOf(command.account))
             ).states.single()
 
-            // calc output account state
+            // calc output account state's amount
             val accountState = accountStateAndRef.state.data.copy(
-                    amount = accountStateAndRef.state.data.amount - command.amounts.sum()
-            )
+                    amount = accountStateAndRef.state.data.amount - command.amounts.sum())
 
             val tx = TransactionBuilder(serviceHub.networkMapCache.notaryIdentities.first())
-                    .addCommand(command, ourIdentity.owningKey, command.requester.owningKey)
+                    .addCommand(command, ourIdentity.owningKey, session.counterparty.owningKey)
                     .addInputState(accountStateAndRef)
                     .addOutputState(accountState, accountState.contractClassName())
 
             // create reserves and guarantees
-            val guarantees = mutableListOf<UniqueIdentifier>()
             for (amount in command.amounts) {
                 val reserveState = ReserveState(
                         amount = amount,
@@ -96,58 +102,21 @@ object ObtainPaymentGuaranteesFlow {
                         participants = listOf(ourIdentity))
                 tx.addOutputState(reserveState, reserveState.contractClassName())
 
-                val paymentGuaranteeState = PaymentGuaranteeState(
-                        requester = command.requester,
+                val guaranteeState = PaymentGuaranteeState(
+                        requester = session.counterparty,
                         guarantor = ourIdentity,
                         amount = amount,
                         reserveId = reserveState.linearId
                 )
-                tx.addOutputState(paymentGuaranteeState, paymentGuaranteeState.contractClassName())
-                guarantees.add(paymentGuaranteeState.linearId)
+                tx.addOutputState(guaranteeState, guaranteeState.contractClassName())
             }
 
             tx.verify(serviceHub)
             val selfSignedTx = serviceHub.signInitialTransaction(tx)
-            val signedTx = subFlow(GetCounterpartySignatureFlow(selfSignedTx, session.counterparty))
+            // obtain requester's signature
+            val signedTx = subFlow(CollectSignaturesFlow(selfSignedTx, listOf(session)))
+
             subFlow(FinalityFlow(signedTx))
-
-            session.send(guarantees)
         }
-    }
-}
-
-
-
-/**
- * "Callback" flow: the guarantor has composed the transaction and asks counterparty to sign that one.
- */
-@InitiatingFlow
-class GetCounterpartySignatureFlow(
-        private val selfSignedTx: SignedTransaction,
-        private val counterparty: Party
-) : FlowLogic<SignedTransaction>() {
-
-    @Suspendable
-    override fun call(): SignedTransaction {
-        return subFlow(CollectSignaturesFlow(selfSignedTx, listOf(initiateFlow(counterparty))))
-    }
-}
-
-/**
- * Requester makes sure that (1) all requested guarantees are obtained and (2) his account is not robbed.
- * Then the requester signs the transaction.
- */
-@InitiatedBy(GetCounterpartySignatureFlow::class)
-class GetCounterpartySignatureResponder(val session: FlowSession) : FlowLogic<Unit>() {
-
-    @Suspendable
-    override fun call() {
-        val flow = object: SignTransactionFlow(session) {
-            override fun checkTransaction(stx: SignedTransaction) {
-                stx.verify(serviceHub, checkSufficientSignatures = false)
-                stx.checkSignaturesAreValid()
-            }
-        }
-        subFlow(flow)
     }
 }

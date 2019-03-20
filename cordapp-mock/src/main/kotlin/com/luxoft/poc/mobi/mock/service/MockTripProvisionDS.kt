@@ -1,6 +1,8 @@
-package com.luxoft.poc.mobi.service
+package com.luxoft.poc.mobi.mock.service
 
 import com.luxoft.poc.mobi.*
+import com.luxoft.poc.mobi.model.data.*
+import com.luxoft.poc.mobi.model.service.ProvisionOfferDS
 import net.corda.core.identity.CordaX500Name
 import net.corda.core.identity.Party
 import net.corda.core.node.ServiceHub

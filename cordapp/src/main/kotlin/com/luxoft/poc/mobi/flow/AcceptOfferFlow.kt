@@ -2,6 +2,7 @@ package com.luxoft.poc.mobi.flow
 
 import co.paralleluniverse.fibers.Suspendable
 import com.luxoft.poc.mobi.*
+import com.luxoft.poc.mobi.model.data.*
 import net.corda.core.contracts.Command
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.contracts.UniqueIdentifier

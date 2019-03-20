@@ -1,9 +1,10 @@
 package com.luxoft.poc.mobi.service
 
 import com.luxoft.poc.mobi.ConfirmOfferCommand
-import com.luxoft.poc.mobi.ProvisionCommitment
-import com.luxoft.poc.mobi.ProvisionDetails
-import com.luxoft.poc.mobi.ProvisionOffer
+import com.luxoft.poc.mobi.model.data.ProvisionCommitment
+import com.luxoft.poc.mobi.model.data.ProvisionDetails
+import com.luxoft.poc.mobi.model.data.ProvisionOffer
+import com.luxoft.poc.mobi.model.service.ProvisionOfferDS
 import net.corda.core.contracts.Command
 import net.corda.core.crypto.TransactionSignature
 import net.corda.core.identity.CordaX500Name
@@ -98,7 +99,7 @@ class ProvisionOfferingService(
         val loc = ourName.locality.replace(regex, "_")
         // country code never contains non-alphanumeric characters, so it is used "as is"
         val cfgFileName = "${commonName}-${orgUnit}-${org}-${loc}-${ourName.country}"
-        val cfgPath = Paths.get("${cfgFileName}.properties").toAbsolutePath()
+        val cfgPath = Paths.get("../cordapp-mock/${cfgFileName}.properties").toAbsolutePath()
         val defaultCfgPath = Paths.get("node.properties").toAbsolutePath()
         val reader =  try {
             // try to read node-specific config first

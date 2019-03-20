@@ -1,4 +1,4 @@
-package com.luxoft.poc.mobi.flow
+package com.luxoft.poc.mobi.mock.flow
 
 import co.paralleluniverse.fibers.Suspendable
 import com.luxoft.poc.mobi.AccountState

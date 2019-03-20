@@ -1,4 +1,4 @@
-package com.luxoft.poc.mobi
+package com.luxoft.poc.mobi.model.data
 
 import net.corda.core.identity.Party
 import net.corda.core.serialization.CordaSerializable

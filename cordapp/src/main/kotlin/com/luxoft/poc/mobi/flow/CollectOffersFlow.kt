@@ -1,9 +1,9 @@
 package com.luxoft.poc.mobi.flow
 
 import co.paralleluniverse.fibers.Suspendable
-import com.luxoft.poc.mobi.ProvisionCommitment
-import com.luxoft.poc.mobi.ProvisionDetails
-import com.luxoft.poc.mobi.ProvisionOffer
+import com.luxoft.poc.mobi.model.data.ProvisionCommitment
+import com.luxoft.poc.mobi.model.data.ProvisionDetails
+import com.luxoft.poc.mobi.model.data.ProvisionOffer
 import com.luxoft.poc.mobi.service.ProvisionOfferingService
 import net.corda.core.flows.*
 import net.corda.core.utilities.ProgressTracker

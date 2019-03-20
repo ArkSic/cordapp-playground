@@ -1,6 +1,6 @@
 package com.luxoft.poc.mobi.flow
 
-import com.luxoft.poc.mobi.GeoPoint
+import com.luxoft.poc.mobi.model.data.GeoPoint
 
 
 object GeoPoints {

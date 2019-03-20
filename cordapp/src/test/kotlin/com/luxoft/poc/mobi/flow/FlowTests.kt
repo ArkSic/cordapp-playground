@@ -1,6 +1,9 @@
 package com.luxoft.poc.mobi.flow
 
 import com.luxoft.poc.mobi.*
+import com.luxoft.poc.mobi.mock.data.X500Names
+import com.luxoft.poc.mobi.mock.flow.MockInitAccountFlow
+import com.luxoft.poc.mobi.model.data.*
 import net.corda.core.contracts.UniqueIdentifier
 import net.corda.core.identity.Party
 import net.corda.core.utilities.getOrThrow
@@ -220,7 +223,7 @@ class FlowTests : CordaTestBase() {
         val reserves = paymentOperator1Node.statesOfType<ReserveState>()
                 .assertQuantity(consumed = 0, unconsumed = amounts.size)
 
-        consumerNode.services.startFlow(RevokePaymentGuaranteesFlow(paymentOperator1, guaranteeIds))
+        consumerNode.services.startFlow(RevokePaymentGuaranteesFlow.Initiator(paymentOperator1, guaranteeIds))
 
         consumerNode.statesOfType<PaymentGuaranteeState>().assertQuantity(consumed = amounts.size, unconsumed = 0)
         consumerNode.statesOfType<ReserveState>().assertQuantity(consumed = 0, unconsumed = 0)

@@ -1,4 +1,4 @@
-package com.luxoft.poc.mobi
+package com.luxoft.poc.mobi.mock.data
 
 import net.corda.core.identity.CordaX500Name
 
